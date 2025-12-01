@@ -2,8 +2,8 @@
 pragma solidity ^0.8.30;
 
 contract Backgammon {
-    uint256[30] public white;
-    uint256[30] public black;
+    uint256[31] public white;
+    uint256[31] public black;
 
     bool public isItBlackTurn;
 
@@ -15,7 +15,6 @@ contract Backgammon {
         black[8] = 3;
         black[13] = 5;
         black[24] = 2;
-
         // white: [2,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,3,0,5,0,0,0,0,0]
         white[1] = 2;
         white[12] = 5;
@@ -28,7 +27,6 @@ contract Backgammon {
         require(!isItBlackTurn, "Is Black Turn");
         // require(deadWhiteCheckers == 0, "There is Dead white checkers");
         require(_from != _to, "_from and _to should be different");
-        require(_from < 24 && _to < 24, "_from or _to out of game range");
 
         require(white[_from] > 0, "There is no white checkers on _from");
         require(black[_to] < 2, "White cant go there");
