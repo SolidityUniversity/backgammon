@@ -29,8 +29,15 @@ contract Backgammon {
     address public whitePlayer; // First player (white)
     address public blackPlayer; // Second player (black)
     uint256 public stakeAmount; // Amount each player must stake
-    bool public gameStarted; // True when both players have staked
+    bool public gameStarted; // True when both players have staked (but game not active yet)
+    bool public gameActive; // True when first turn is determined and game can begin
     bool public fundsWithdrawn; // True when winner has withdrawn funds
+
+    // Start dice rolls to determine first turn
+    uint256 public whiteStartDice; // White player's start dice roll (1-6)
+    uint256 public blackStartDice; // Black player's start dice roll (1-6)
+    bool public whiteStartDiceRolled; // True when white player rolled start dice
+    bool public blackStartDiceRolled; // True when black player rolled start dice
 
     event WhiteTurn(uint256 _from, uint256 _to);
     event BlackTurn(uint256 _from, uint256 _to);
@@ -44,6 +51,8 @@ contract Backgammon {
         uint256 stakeAmount
     );
     event FundsWithdrawn(address winner, uint256 amount);
+    event StartDiceRolled(address player, uint256 dice);
+    event FirstTurnDetermined(bool isBlackTurn, uint256 dice1, uint256 dice2);
 
     constructor() payable {
         // black: [0,0,0,0,0,5,0,3,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,2]
@@ -71,9 +80,18 @@ contract Backgammon {
         _;
     }
 
-    // Modifier to check if game has started (both players staked)
-    modifier gameHasStarted() {
-        require(gameStarted, "Game has not started yet");
+    // Modifier to check if game is active (first turn determined)
+    modifier gameIsActive() {
+        require(
+            gameActive,
+            "Game is not active yet. Determine first turn first."
+        );
+        _;
+    }
+
+    // Modifier to check if both players have staked
+    modifier bothPlayersStaked() {
+        require(gameStarted, "Both players must stake first");
         _;
     }
 
@@ -104,7 +122,12 @@ contract Backgammon {
         );
         require(msg.sender != whitePlayer, "Cannot play against yourself");
         blackPlayer = msg.sender;
-        gameStarted = true;
+        gameStarted = true; // Both players staked, but game not active yet
+        // Reset start dice flags
+        whiteStartDiceRolled = false;
+        blackStartDiceRolled = false;
+        whiteStartDice = 0;
+        blackStartDice = 0;
         emit StakeDeposited(msg.sender, msg.value);
         emit GameStarted(whitePlayer, blackPlayer, stakeAmount);
     }
@@ -167,9 +190,14 @@ contract Backgammon {
             address _blackPlayer,
             uint256 _stakeAmount,
             bool _gameStarted,
+            bool _gameActive,
             uint8 _winner,
             bool _fundsWithdrawn,
-            uint256 _balance
+            uint256 _balance,
+            uint256 _whiteStartDice,
+            uint256 _blackStartDice,
+            bool _whiteStartDiceRolled,
+            bool _blackStartDiceRolled
         )
     {
         return (
@@ -177,10 +205,128 @@ contract Backgammon {
             blackPlayer,
             stakeAmount,
             gameStarted,
+            gameActive,
             winner,
             fundsWithdrawn,
-            address(this).balance
+            address(this).balance,
+            whiteStartDice,
+            blackStartDice,
+            whiteStartDiceRolled,
+            blackStartDiceRolled
         );
+    }
+
+    // Roll start dice for black player (second player rolls first)
+    function rollStartDiceBlack() public bothPlayersStaked returns (uint256) {
+        require(!gameActive, "Game already active");
+        require(
+            msg.sender == blackPlayer,
+            "Only black player can roll start dice"
+        );
+        require(
+            !blackStartDiceRolled,
+            "Black player already rolled start dice"
+        );
+
+        // Generate random dice value (1-6)
+        uint256 seed = uint256(
+            keccak256(
+                abi.encodePacked(
+                    block.timestamp,
+                    block.prevrandao,
+                    blockhash(block.number - 1),
+                    msg.sender
+                )
+            )
+        );
+        uint256 dice = (seed % 6) + 1;
+
+        blackStartDice = dice;
+        blackStartDiceRolled = true;
+        emit StartDiceRolled(msg.sender, dice);
+
+        // If white already rolled, determine first turn
+        if (whiteStartDiceRolled) {
+            _determineFirstTurn();
+        }
+
+        return dice;
+    }
+
+    // Roll start dice for white player (first player rolls second)
+    function rollStartDiceWhite() public bothPlayersStaked returns (uint256) {
+        require(!gameActive, "Game already active");
+        require(
+            msg.sender == whitePlayer,
+            "Only white player can roll start dice"
+        );
+        require(
+            !whiteStartDiceRolled,
+            "White player already rolled start dice"
+        );
+        require(blackStartDiceRolled, "Black player must roll first");
+
+        // Generate random dice value (1-6)
+        uint256 seed = uint256(
+            keccak256(
+                abi.encodePacked(
+                    block.timestamp,
+                    block.prevrandao,
+                    blockhash(block.number - 1),
+                    msg.sender
+                )
+            )
+        );
+        uint256 dice = (seed % 6) + 1;
+
+        whiteStartDice = dice;
+        whiteStartDiceRolled = true;
+        emit StartDiceRolled(msg.sender, dice);
+
+        // Determine first turn
+        _determineFirstTurn();
+
+        return dice;
+    }
+
+    // Internal function to determine first turn based on start dice rolls
+    function _determineFirstTurn() internal {
+        require(
+            whiteStartDiceRolled && blackStartDiceRolled,
+            "Both players must roll start dice"
+        );
+
+        // If dice are equal, reset and require re-roll
+        if (whiteStartDice == blackStartDice) {
+            whiteStartDiceRolled = false;
+            blackStartDiceRolled = false;
+            whiteStartDice = 0;
+            blackStartDice = 0;
+            return; // Players need to roll again
+        }
+
+        // Determine who goes first (higher dice wins)
+        if (blackStartDice > whiteStartDice) {
+            // Black goes first
+            isItBlackTurn = true;
+            // Set initial dice combination for first turn (use the two dice values)
+            blackMovesCount = 2;
+            blackAvailableMoves[0] = blackStartDice;
+            blackAvailableMoves[1] = whiteStartDice;
+            blackDiceRolled = true;
+        } else {
+            // White goes first
+            isItBlackTurn = false;
+            // Set initial dice combination for first turn (use the two dice values)
+            whiteMovesCount = 2;
+            whiteAvailableMoves[0] = whiteStartDice;
+            whiteAvailableMoves[1] = blackStartDice;
+            whiteDiceRolled = true;
+        }
+
+        // Activate the game
+        gameActive = true;
+        emit FirstTurnDetermined(isItBlackTurn, whiteStartDice, blackStartDice);
     }
 
     // Check for win condition and set winner if game is won
@@ -229,7 +375,7 @@ contract Backgammon {
     function rollDiceWhite()
         public
         gameNotFinished
-        gameHasStarted
+        gameIsActive
         returns (uint256 dice1, uint256 dice2)
     {
         require(!isItBlackTurn, "Is Black Turn");
@@ -279,7 +425,7 @@ contract Backgammon {
     function moveWhite(
         uint256 _from,
         uint256 _to
-    ) public gameNotFinished gameHasStarted {
+    ) public gameNotFinished gameIsActive {
         require(!isItBlackTurn, "Is Black Turn");
         require(msg.sender == whitePlayer, "Only white player can move");
         require(whiteDiceRolled, "Must roll dice before making a move");
@@ -541,7 +687,7 @@ contract Backgammon {
     function rollDiceBlack()
         public
         gameNotFinished
-        gameHasStarted
+        gameIsActive
         returns (uint256 dice1, uint256 dice2)
     {
         require(isItBlackTurn, "Is White Turn");
@@ -591,7 +737,7 @@ contract Backgammon {
     function moveBlack(
         uint256 _from,
         uint256 _to
-    ) public gameNotFinished gameHasStarted {
+    ) public gameNotFinished gameIsActive {
         require(isItBlackTurn, "Is White Turn");
         require(msg.sender == blackPlayer, "Only black player can move");
         require(blackDiceRolled, "Must roll dice before making a move");

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Address } from "@scaffold-ui/components";
 import { formatEther } from "viem";
+import { useAccount } from "wagmi";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
@@ -11,6 +12,9 @@ import { getParsedError, notification } from "~~/utils/scaffold-eth";
 export const BackgammonBoard = () => {
   // State for selected fields
   const [selectedFrom, setSelectedFrom] = useState<number | null>(null);
+
+  // Get current user address
+  const { address: currentAddress } = useAccount();
 
   // Read current turn
   const { data: isItBlackTurn } = useScaffoldReadContract({
@@ -42,11 +46,36 @@ export const BackgammonBoard = () => {
     contractName: "Backgammon",
     functionName: "gameStarted" as any,
   });
+  const { data: gameActiveData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "gameActive" as any,
+  });
+  const { data: whiteStartDiceData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "whiteStartDice" as any,
+  });
+  const { data: blackStartDiceData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "blackStartDice" as any,
+  });
+  const { data: whiteStartDiceRolledData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "whiteStartDiceRolled" as any,
+  });
+  const { data: blackStartDiceRolledData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "blackStartDiceRolled" as any,
+  });
 
   const whitePlayer = whitePlayerData as string | undefined;
   const blackPlayer = blackPlayerData as string | undefined;
   const stakeAmount = stakeAmountData as bigint | undefined;
   const gameStarted = gameStartedData as boolean | undefined;
+  const gameActive = gameActiveData as boolean | undefined;
+  const whiteStartDice = whiteStartDiceData as bigint | undefined;
+  const blackStartDice = blackStartDiceData as bigint | undefined;
+  const whiteStartDiceRolled = whiteStartDiceRolledData as boolean | undefined;
+  const blackStartDiceRolled = blackStartDiceRolledData as boolean | undefined;
 
   // Get contract address
   const { data: deployedContractData } = useDeployedContractInfo({
@@ -68,6 +97,20 @@ export const BackgammonBoard = () => {
   const { writeContractAsync: writeBackgammonAsync } = useScaffoldWriteContract({
     contractName: "Backgammon",
   });
+
+  // Handle ESC key to cancel selection
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && selectedFrom !== null) {
+        setSelectedFrom(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedFrom]);
 
   // Parse error message and return user-friendly Russian message
   const parseErrorMessage = (error: any): string => {
@@ -475,6 +518,29 @@ export const BackgammonBoard = () => {
       (typeof blackPlayer === "string" && blackPlayer === "0x0000000000000000000000000000000000000000")) &&
     !gameStarted;
 
+  // Check if both players staked but first turn not determined yet
+  const isWaitingForFirstTurn =
+    gameStarted &&
+    !gameActive &&
+    whitePlayer &&
+    blackPlayer &&
+    typeof whitePlayer === "string" &&
+    typeof blackPlayer === "string";
+
+  // Check if current user is white player
+  const isCurrentUserWhite =
+    currentAddress &&
+    whitePlayer &&
+    typeof whitePlayer === "string" &&
+    currentAddress.toLowerCase() === whitePlayer.toLowerCase();
+
+  // Check if current user is black player
+  const isCurrentUserBlack =
+    currentAddress &&
+    blackPlayer &&
+    typeof blackPlayer === "string" &&
+    currentAddress.toLowerCase() === blackPlayer.toLowerCase();
+
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
       {/* Challenge message */}
@@ -494,6 +560,109 @@ export const BackgammonBoard = () => {
               <div className="text-xs text-blue-600 mt-2">
                 Просто отправьте {formatEther(stakeAmount)} ETH на этот адрес, и игра начнется автоматически!
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* First turn determination UI */}
+      {isWaitingForFirstTurn && (
+        <div className="mb-6 bg-green-50 border-2 border-green-400 rounded-lg p-6 shadow-lg">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-green-900 mb-4">🎲 Определение первого хода</h3>
+            <div className="flex flex-col gap-4">
+              {/* Black player dice roll */}
+              <div className="bg-white rounded-lg p-4 border border-green-300">
+                <div className="text-lg font-semibold text-green-800 mb-2">Черный игрок (второй):</div>
+                {blackStartDiceRolled ? (
+                  <div className="flex items-center justify-center gap-4">
+                    <span className="text-xl font-bold">Выпало:</span>
+                    <Image
+                      src={`/${Number(blackStartDice)}.png`}
+                      alt={`Dice ${blackStartDice}`}
+                      width={64}
+                      height={64}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="text-sm text-green-700">Ожидание броска кости...</div>
+                    {isCurrentUserBlack && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={async () => {
+                          try {
+                            await writeBackgammonAsync({
+                              functionName: "rollStartDiceBlack",
+                            });
+                          } catch (error) {
+                            console.error("Error rolling start dice:", error);
+                            const userMessage = parseErrorMessage(error);
+                            notification.error(userMessage);
+                          }
+                        }}
+                      >
+                        Бросить кость
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* White player dice roll */}
+              <div className="bg-white rounded-lg p-4 border border-green-300">
+                <div className="text-lg font-semibold text-green-800 mb-2">Белый игрок (первый):</div>
+                {whiteStartDiceRolled ? (
+                  <div className="flex items-center justify-center gap-4">
+                    <span className="text-xl font-bold">Выпало:</span>
+                    <Image
+                      src={`/${Number(whiteStartDice)}.png`}
+                      alt={`Dice ${whiteStartDice}`}
+                      width={64}
+                      height={64}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    {blackStartDiceRolled ? (
+                      <>
+                        <div className="text-sm text-green-700">Ваш ход! Бросьте кость:</div>
+                        {isCurrentUserWhite && (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={async () => {
+                              try {
+                                await writeBackgammonAsync({
+                                  functionName: "rollStartDiceWhite",
+                                });
+                              } catch (error) {
+                                console.error("Error rolling start dice:", error);
+                                const userMessage = parseErrorMessage(error);
+                                notification.error(userMessage);
+                              }
+                            }}
+                          >
+                            Бросить кость
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-sm text-green-600">Ожидание броска черного игрока...</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Show result if both rolled and equal (need re-roll) */}
+              {whiteStartDiceRolled &&
+                blackStartDiceRolled &&
+                whiteStartDice &&
+                blackStartDice &&
+                Number(whiteStartDice) === Number(blackStartDice) && (
+                  <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+                    <div className="text-center text-yellow-800 font-bold">⚠️ Одинаковые кости! Нужен переброс</div>
+                  </div>
+                )}
             </div>
           </div>
         </div>

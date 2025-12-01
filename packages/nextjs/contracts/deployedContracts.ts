@@ -7,11 +7,15 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     Backgammon: {
-      address: "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4",
+      address: "0x49b8e3b089d4ebf9f37b1da9b839ec013c2cd8c9",
       abi: [
         {
           type: "constructor",
           inputs: [],
+          stateMutability: "payable",
+        },
+        {
+          type: "receive",
           stateMutability: "payable",
         },
         {
@@ -111,6 +115,32 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "blackStartDice",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "blackStartDiceRolled",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "depositStake",
           inputs: [],
           outputs: [],
@@ -119,6 +149,19 @@ const deployedContracts = {
         {
           type: "function",
           name: "fundsWithdrawn",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "gameActive",
           inputs: [],
           outputs: [
             {
@@ -181,6 +224,11 @@ const deployedContracts = {
               internalType: "bool",
             },
             {
+              name: "_gameActive",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
               name: "_winner",
               type: "uint8",
               internalType: "uint8",
@@ -194,6 +242,26 @@ const deployedContracts = {
               name: "_balance",
               type: "uint256",
               internalType: "uint256",
+            },
+            {
+              name: "_whiteStartDice",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_blackStartDice",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_whiteStartDiceRolled",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
+              name: "_blackStartDiceRolled",
+              type: "bool",
+              internalType: "bool",
             },
           ],
           stateMutability: "view",
@@ -318,6 +386,32 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "rollStartDiceBlack",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "rollStartDiceWhite",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "stakeAmount",
           inputs: [],
           outputs: [
@@ -408,6 +502,32 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "whiteStartDice",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "whiteStartDiceRolled",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "winner",
           inputs: [],
           outputs: [
@@ -451,6 +571,31 @@ const deployedContracts = {
           inputs: [
             {
               name: "isBlack",
+              type: "bool",
+              indexed: false,
+              internalType: "bool",
+            },
+            {
+              name: "dice1",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "dice2",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "FirstTurnDetermined",
+          inputs: [
+            {
+              name: "isBlackTurn",
               type: "bool",
               indexed: false,
               internalType: "bool",
@@ -548,6 +693,25 @@ const deployedContracts = {
         },
         {
           type: "event",
+          name: "StartDiceRolled",
+          inputs: [
+            {
+              name: "player",
+              type: "address",
+              indexed: false,
+              internalType: "address",
+            },
+            {
+              name: "dice",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
           name: "TurnSwitched",
           inputs: [
             {
@@ -580,7 +744,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 128,
+      deployedOnBlock: 134,
     },
   },
 } as const;
