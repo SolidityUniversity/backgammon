@@ -7,11 +7,29 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     Backgammon: {
-      address: "0x700b6a60ce7eaaea56f065753d8dcb9653dbad35",
+      address: "0xb19b36b1456e65e3a6d514d3f715f204bd59f431",
       abi: [
         {
           type: "constructor",
           inputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "_moveWhite",
+          inputs: [
+            {
+              name: "_from",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_to",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
           stateMutability: "nonpayable",
         },
         {
@@ -35,6 +53,19 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "isItBlackTurn",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "white",
           inputs: [
             {
@@ -52,9 +83,28 @@ const deployedContracts = {
           ],
           stateMutability: "view",
         },
+        {
+          type: "event",
+          name: "WhiteTurn",
+          inputs: [
+            {
+              name: "_from",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "_to",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 1,
+      deployedOnBlock: 6,
     },
   },
 } as const;

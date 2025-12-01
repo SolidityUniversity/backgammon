@@ -3,8 +3,7 @@
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 export const BackgammonBoard = () => {
-  // Read all white positions - all hooks must be called at top level
-  const white0 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [0n] });
+  // Read white positions for cells 1-24 (cell 0 is reserved for dead checkers)
   const white1 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [1n] });
   const white2 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [2n] });
   const white3 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [3n] });
@@ -28,9 +27,9 @@ export const BackgammonBoard = () => {
   const white21 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [21n] });
   const white22 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [22n] });
   const white23 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [23n] });
+  const white24 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [24n] });
 
-  // Read all black positions
-  const black0 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [0n] });
+  // Read black positions for cells 1-24 (cell 0 is reserved for dead checkers)
   const black1 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [1n] });
   const black2 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [2n] });
   const black3 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [3n] });
@@ -54,63 +53,65 @@ export const BackgammonBoard = () => {
   const black21 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [21n] });
   const black22 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [22n] });
   const black23 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [23n] });
+  const black24 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [24n] });
 
+  // Direct mapping: cell 1 → index 1, cell 24 → index 24
   const whiteReads = [
-    white0,
-    white1,
-    white2,
-    white3,
-    white4,
-    white5,
-    white6,
-    white7,
-    white8,
-    white9,
-    white10,
-    white11,
-    white12,
-    white13,
-    white14,
-    white15,
-    white16,
-    white17,
-    white18,
-    white19,
-    white20,
-    white21,
-    white22,
-    white23,
+    white1, // cell 1
+    white2, // cell 2
+    white3, // cell 3
+    white4, // cell 4
+    white5, // cell 5
+    white6, // cell 6
+    white7, // cell 7
+    white8, // cell 8
+    white9, // cell 9
+    white10, // cell 10
+    white11, // cell 11
+    white12, // cell 12
+    white13, // cell 13
+    white14, // cell 14
+    white15, // cell 15
+    white16, // cell 16
+    white17, // cell 17
+    white18, // cell 18
+    white19, // cell 19
+    white20, // cell 20
+    white21, // cell 21
+    white22, // cell 22
+    white23, // cell 23
+    white24, // cell 24
   ];
 
   const blackReads = [
-    black0,
-    black1,
-    black2,
-    black3,
-    black4,
-    black5,
-    black6,
-    black7,
-    black8,
-    black9,
-    black10,
-    black11,
-    black12,
-    black13,
-    black14,
-    black15,
-    black16,
-    black17,
-    black18,
-    black19,
-    black20,
-    black21,
-    black22,
-    black23,
+    black1, // cell 1
+    black2, // cell 2
+    black3, // cell 3
+    black4, // cell 4
+    black5, // cell 5
+    black6, // cell 6
+    black7, // cell 7
+    black8, // cell 8
+    black9, // cell 9
+    black10, // cell 10
+    black11, // cell 11
+    black12, // cell 12
+    black13, // cell 13
+    black14, // cell 14
+    black15, // cell 15
+    black16, // cell 16
+    black17, // cell 17
+    black18, // cell 18
+    black19, // cell 19
+    black20, // cell 20
+    black21, // cell 21
+    black22, // cell 22
+    black23, // cell 23
+    black24, // cell 24
   ];
 
-  const white = blackReads.map(read => read.data || 0n);
-  const black = whiteReads.map(read => read.data || 0n);
+  const white = whiteReads.map(read => read.data || 0n);
+  const black = blackReads.map(read => read.data || 0n);
 
   const isLoading = whiteReads.some(r => r.isLoading) || blackReads.some(r => r.isLoading);
 
@@ -122,27 +123,30 @@ export const BackgammonBoard = () => {
     );
   }
 
-  const renderPoint = (index: number, isTop: boolean) => {
-    const whiteCount = Number(white[index] || 0);
-    const blackCount = Number(black[index] || 0);
+  const renderPoint = (cell: number, isTop: boolean) => {
+    // Direct mapping: cell 1-24 maps directly to array index 0-23
+    // cell 1 → array[0], cell 2 → array[1], ..., cell 24 → array[23]
+    const arrayIndex = cell - 1;
+    const whiteCount = Number(white[arrayIndex] || 0);
+    const blackCount = Number(black[arrayIndex] || 0);
     const totalCount = whiteCount + blackCount;
 
     return (
-      <div key={index} className="relative w-16 h-64">
+      <div key={cell} className="relative w-16 h-64">
         {/* Triangle background */}
         <div
           className={`absolute inset-0 ${isTop ? "justify-start" : "justify-end"}`}
           style={{
             clipPath: isTop ? "polygon(0 0, 100% 0, 50% 100%)" : "polygon(50% 0, 100% 100%, 0 100%)",
-            backgroundColor: index % 2 === 0 ? "#d4a574" : "#8b6f47",
+            backgroundColor: cell % 2 === 0 ? "#d4a574" : "#8b6f47",
           }}
         ></div>
 
-        {/* Point number */}
+        {/* Point number - shows cell number (1-24) */}
         <div
           className={`absolute z-10 ${isTop ? "top-2" : "bottom-2"} left-1/2 transform -translate-x-1/2 text-xs font-bold text-base-content/60`}
         >
-          {index}
+          {cell}
         </div>
 
         {/* Checkers */}
@@ -185,14 +189,14 @@ export const BackgammonBoard = () => {
       <div className="bg-amber-100 rounded-lg p-6 shadow-xl">
         <h2 className="text-2xl font-bold text-center mb-6 text-amber-900">Backgammon Board</h2>
 
-        {/* Top half: points 11-0 (right to left) */}
+        {/* Top half: cells 12-1 (right to left) */}
         <div className="flex gap-4 mb-[100px]">
-          {Array.from({ length: 12 }, (_, i) => 11 - i).map(index => renderPoint(index, true))}
+          {Array.from({ length: 12 }, (_, i) => 12 - i).map(cell => renderPoint(cell, true))}
         </div>
 
-        {/* Bottom half: points 12-23 (left to right) */}
+        {/* Bottom half: cells 13-24 (left to right) */}
         <div className="flex gap-4">
-          {Array.from({ length: 12 }, (_, i) => 12 + i).map(index => renderPoint(index, false))}
+          {Array.from({ length: 12 }, (_, i) => 13 + i).map(cell => renderPoint(cell, false))}
         </div>
 
         {/* Legend */}
