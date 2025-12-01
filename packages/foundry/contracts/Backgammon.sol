@@ -571,11 +571,13 @@ contract Backgammon {
             // If there are dead checkers, check if we can move them
             if (black[25] > 0) {
                 // From 25 (dead) to position, must move backwards
-                // Calculate target position: 25 - moveDistance
-                uint256 to = 25 - moveDistance;
-                // Can move to positions 1-24 (regular move) or 0 (not allowed from dead)
-                if (to >= 1 && to <= 24 && white[to] < 2) {
-                    return true; // Can move dead checker
+                // Check for underflow: can only move if moveDistance <= 25
+                if (moveDistance <= 25) {
+                    uint256 to = 25 - moveDistance;
+                    // Can move to positions 1-24 (regular move) or 0 (not allowed from dead)
+                    if (to >= 1 && to <= 24 && white[to] < 2) {
+                        return true; // Can move dead checker
+                    }
                 }
             } else {
                 // Check if all checkers are in home board (can bear off)
@@ -595,27 +597,27 @@ contract Backgammon {
                 for (uint256 from = 1; from <= 24; from++) {
                     if (black[from] > 0) {
                         // Black moves backwards, so to = from - moveDistance
-                        uint256 to = from - moveDistance;
-                        // Check if move is valid (within board or bear off)
-                        if (to >= 0) {
+                        // Check for underflow: can only move if moveDistance <= from
+                        if (moveDistance <= from) {
+                            uint256 to = from - moveDistance;
                             // Regular move within board
-                            if (to >= 1 && white[to] < 2) {
+                            if (to >= 1 && to <= 24 && white[to] < 2) {
                                 return true; // Valid move found
                             }
-                            // Bear off (to == 0)
-                            if (to == 0 && canBearOff) {
-                                uint256 requiredDistance = from; // Distance from from to 0
-                                // If dice exactly matches required distance, can bear off from any position
-                                if (moveDistance == requiredDistance) {
-                                    return true;
-                                }
-                                // If dice is greater (overkill), can only bear off from furthest position
-                                if (
-                                    moveDistance > requiredDistance &&
-                                    from == furthestPosition
-                                ) {
-                                    return true;
-                                }
+                        }
+                        // Bear off (to == 0) - check if moveDistance >= from
+                        if (canBearOff && moveDistance >= from) {
+                            uint256 requiredDistance = from; // Distance from from to 0
+                            // If dice exactly matches required distance, can bear off from any position
+                            if (moveDistance == requiredDistance) {
+                                return true;
+                            }
+                            // If dice is greater (overkill), can only bear off from furthest position
+                            if (
+                                moveDistance > requiredDistance &&
+                                from == furthestPosition
+                            ) {
+                                return true;
                             }
                         }
                     }

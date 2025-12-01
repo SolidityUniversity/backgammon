@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 export const BackgammonBoard = () => {
+  // State for selected fields
+  const [selectedFrom, setSelectedFrom] = useState<number | null>(null);
+
   // Read current turn
   const { data: isItBlackTurn } = useScaffoldReadContract({
     contractName: "Backgammon",
@@ -24,6 +28,33 @@ export const BackgammonBoard = () => {
   const { writeContractAsync: writeBackgammonAsync } = useScaffoldWriteContract({
     contractName: "Backgammon",
   });
+
+  // Handle field click
+  const handleFieldClick = async (cell: number) => {
+    if (selectedFrom === null) {
+      // First click: select from field
+      setSelectedFrom(cell);
+    } else {
+      // Second click: make move
+      try {
+        if (isItBlackTurn) {
+          await writeBackgammonAsync({
+            functionName: "moveBlack",
+            args: [BigInt(selectedFrom), BigInt(cell)],
+          });
+        } else {
+          await writeBackgammonAsync({
+            functionName: "moveWhite",
+            args: [BigInt(selectedFrom), BigInt(cell)],
+          });
+        }
+        setSelectedFrom(null); // Reset selection
+      } catch (error) {
+        console.error("Error making move:", error);
+        setSelectedFrom(null); // Reset on error
+      }
+    }
+  };
 
   // Read available moves for white
   const whiteMove0 = useScaffoldReadContract({
@@ -237,9 +268,14 @@ export const BackgammonBoard = () => {
     const whiteCount = Number(white[arrayIndex] || 0);
     const blackCount = Number(black[arrayIndex] || 0);
     const totalCount = whiteCount + blackCount;
+    const isSelected = selectedFrom === cell;
 
     return (
-      <div key={cell} className="relative w-16 h-64">
+      <div
+        key={cell}
+        className={`relative w-16 h-64 cursor-pointer ${isSelected ? "ring-4 ring-blue-500 ring-offset-2" : ""}`}
+        onClick={() => handleFieldClick(cell)}
+      >
         {/* Triangle background */}
         <div
           className={`absolute inset-0 ${isTop ? "justify-start" : "justify-end"}`}
@@ -298,9 +334,15 @@ export const BackgammonBoard = () => {
         <div className="bg-amber-100 rounded-lg p-6 shadow-xl flex-1">
           <h2 className="text-2xl font-bold text-center mb-6 text-amber-900">Backgammon Board</h2>
 
-          {/* Top section: dead white (☠️) and saved white (⛳️) */}
-          {(deadWhiteCount > 0 || savedWhiteCount > 0) && (
-            <div className="flex justify-end items-start mb-4 gap-4">
+          {/* Clickable area for field 0 (dead white checkers) - above top row */}
+          <div
+            className={`min-h-16 mb-2 mx-4 rounded-lg border-2 border-dashed flex items-center justify-between px-4 cursor-pointer transition-all ${
+              selectedFrom === 0 ? "bg-blue-200 border-blue-500" : "bg-amber-50 border-amber-300 hover:bg-amber-100"
+            }`}
+            onClick={() => handleFieldClick(0)}
+          >
+            <div className="text-xs text-amber-700 font-medium">{selectedFrom === 0 ? "Выбрано поле 0" : "0"}</div>
+            <div className="flex items-center gap-2">
               {/* Dead white checkers (☠️) */}
               {deadWhiteCount > 0 && (
                 <div className="flex items-center gap-2">
@@ -312,54 +354,6 @@ export const BackgammonBoard = () => {
                         className="w-10 h-10 rounded-full bg-white border-2 border-gray-400 shadow-md flex items-center justify-center"
                       >
                         <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Saved white checkers (⛳️) */}
-              {savedWhiteCount > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="text-4xl">⛳️</div>
-                  <div className="flex gap-2">
-                    {Array.from({ length: savedWhiteCount }).map((_, i) => (
-                      <div
-                        key={`saved-white-${i}`}
-                        className="w-10 h-10 rounded-full bg-white border-2 border-gray-400 shadow-md flex items-center justify-center"
-                      >
-                        <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Top half: cells 12-1 (right to left) */}
-          <div className="flex gap-4 mb-[100px]">
-            {Array.from({ length: 12 }, (_, i) => 12 - i).map(cell => renderPoint(cell, true))}
-          </div>
-
-          {/* Bottom half: cells 13-24 (left to right) */}
-          <div className="flex gap-4">
-            {Array.from({ length: 12 }, (_, i) => 13 + i).map(cell => renderPoint(cell, false))}
-          </div>
-
-          {/* Bottom section: dead black (☠️) and saved black (⛳️) */}
-          {(deadBlackCount > 0 || savedBlackCount > 0) && (
-            <div className="flex justify-end items-start mt-4 gap-4">
-              {/* Dead black checkers (☠️) */}
-              {deadBlackCount > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="text-4xl">☠️</div>
-                  <div className="flex gap-2">
-                    {Array.from({ length: deadBlackCount }).map((_, i) => (
-                      <div
-                        key={`dead-black-${i}`}
-                        className="w-10 h-10 rounded-full bg-gray-800 border-2 border-gray-900 shadow-md flex items-center justify-center"
-                      >
-                        <div className="w-6 h-6 rounded-full bg-gray-900"></div>
                       </div>
                     ))}
                   </div>
@@ -382,17 +376,59 @@ export const BackgammonBoard = () => {
                 </div>
               )}
             </div>
-          )}
+          </div>
 
-          {/* Legend */}
-          <div className="flex justify-center gap-8 mt-6">
+          {/* Top half: cells 12-1 (right to left) */}
+          <div className="flex gap-4 mb-[100px]">
+            {Array.from({ length: 12 }, (_, i) => 12 - i).map(cell => renderPoint(cell, true))}
+          </div>
+
+          {/* Bottom half: cells 13-24 (left to right) */}
+          <div className="flex gap-4">
+            {Array.from({ length: 12 }, (_, i) => 13 + i).map(cell => renderPoint(cell, false))}
+          </div>
+
+          {/* Clickable area for field 25 (dead black checkers) - below bottom row */}
+          <div
+            className={`min-h-16 mt-2 mx-4 rounded-lg border-2 border-dashed flex items-center justify-between px-4 cursor-pointer transition-all ${
+              selectedFrom === 25 ? "bg-blue-200 border-blue-500" : "bg-amber-50 border-amber-300 hover:bg-amber-100"
+            }`}
+            onClick={() => handleFieldClick(25)}
+          >
+            <div className="text-xs text-amber-700 font-medium">{selectedFrom === 25 ? "Выбрано поле 25" : "25"}</div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-white border-2 border-gray-400"></div>
-              <span className="text-sm font-medium">White</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-gray-800 border-2 border-gray-900"></div>
-              <span className="text-sm font-medium">Black</span>
+              {/* Dead black checkers (☠️) */}
+              {deadBlackCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="text-4xl">☠️</div>
+                  <div className="flex gap-2">
+                    {Array.from({ length: deadBlackCount }).map((_, i) => (
+                      <div
+                        key={`dead-black-${i}`}
+                        className="w-10 h-10 rounded-full bg-gray-800 border-2 border-gray-900 shadow-md flex items-center justify-center"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-gray-900"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Saved white checkers (⛳️) */}
+              {savedWhiteCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="text-4xl">⛳️</div>
+                  <div className="flex gap-2">
+                    {Array.from({ length: savedWhiteCount }).map((_, i) => (
+                      <div
+                        key={`saved-white-${i}`}
+                        className="w-10 h-10 rounded-full bg-white border-2 border-gray-400 shadow-md flex items-center justify-center"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

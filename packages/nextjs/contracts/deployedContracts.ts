@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     Backgammon: {
-      address: "0xd04ff4a75edd737a73e92b2f2274cb887d96e110",
+      address: "0x29a79095352a718b3d7fe84e1f14e9f34a35598e",
       abi: [
         {
           type: "constructor",
@@ -349,7 +349,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 35,
+      deployedOnBlock: 91,
     },
   },
 } as const;
