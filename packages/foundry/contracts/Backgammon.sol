@@ -22,10 +22,14 @@ contract Backgammon {
     uint256[4] public blackAvailableMoves;
     uint256 public blackMovesCount; // Number of available moves (2 for normal, 4 for doubles)
 
+    // Winner: 0 = no winner, 1 = white, 2 = black
+    uint8 public winner;
+
     event WhiteTurn(uint256 _from, uint256 _to);
     event BlackTurn(uint256 _from, uint256 _to);
     event DiceRolled(bool isBlack, uint256 dice1, uint256 dice2);
     event TurnSwitched(bool isBlackTurn);
+    event GameWon(uint8 winner);
 
     constructor() {
         // black: [0,0,0,0,0,5,0,3,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,2]
@@ -38,6 +42,26 @@ contract Backgammon {
         white[12] = 5;
         white[17] = 3;
         white[19] = 5;
+    }
+
+    // Modifier to check if game is not finished
+    modifier gameNotFinished() {
+        require(winner == 0, "Game is finished");
+        _;
+    }
+
+    // Check for win condition and set winner if game is won
+    function _checkWin() internal {
+        // White wins if 15 checkers are on position 25 (saved)
+        if (white[25] == 15 && winner == 0) {
+            winner = 1;
+            emit GameWon(1);
+        }
+        // Black wins if 15 checkers are on position 0 (saved)
+        if (black[0] == 15 && winner == 0) {
+            winner = 2;
+            emit GameWon(2);
+        }
     }
 
     // Generate pseudo-random dice values (1-6)
@@ -69,7 +93,11 @@ contract Backgammon {
     }
 
     // Roll dice for white player with auto-generated random values
-    function rollDiceWhite() public returns (uint256 dice1, uint256 dice2) {
+    function rollDiceWhite()
+        public
+        gameNotFinished
+        returns (uint256 dice1, uint256 dice2)
+    {
         require(!isItBlackTurn, "Is Black Turn");
 
         // Generate random dice values
@@ -113,7 +141,7 @@ contract Backgammon {
     }
 
     // Move white checker - validates that the move distance matches an available move
-    function moveWhite(uint256 _from, uint256 _to) public {
+    function moveWhite(uint256 _from, uint256 _to) public gameNotFinished {
         require(!isItBlackTurn, "Is Black Turn");
         require(whiteDiceRolled, "Must roll dice before making a move");
         require(_from != _to, "_from and _to should be different");
@@ -227,6 +255,14 @@ contract Backgammon {
         white[_from] -= 1;
         white[25] += 1; // Move to saved checkers area
         emit WhiteTurn(_from, 25);
+
+        // Check for win condition
+        _checkWin();
+
+        // If game is won, don't switch turns
+        if (winner > 0) {
+            return;
+        }
 
         // Check if player can continue: must have moves left AND possible moves available
         if (_hasWhiteMovesLeft() == false || !hasWhitePossibleMove()) {
@@ -363,7 +399,11 @@ contract Backgammon {
     // ============ BLACK PLAYER FUNCTIONS ============
 
     // Roll dice for black player with auto-generated random values
-    function rollDiceBlack() public returns (uint256 dice1, uint256 dice2) {
+    function rollDiceBlack()
+        public
+        gameNotFinished
+        returns (uint256 dice1, uint256 dice2)
+    {
         require(isItBlackTurn, "Is White Turn");
 
         // Generate random dice values
@@ -407,7 +447,7 @@ contract Backgammon {
     }
 
     // Move black checker - validates that the move distance matches an available move
-    function moveBlack(uint256 _from, uint256 _to) public {
+    function moveBlack(uint256 _from, uint256 _to) public gameNotFinished {
         require(isItBlackTurn, "Is White Turn");
         require(blackDiceRolled, "Must roll dice before making a move");
         require(_from != _to, "_from and _to should be different");
@@ -525,6 +565,14 @@ contract Backgammon {
         black[_from] -= 1;
         black[0] += 1; // Move to saved checkers area (position 0 for black)
         emit BlackTurn(_from, 0);
+
+        // Check for win condition
+        _checkWin();
+
+        // If game is won, don't switch turns
+        if (winner > 0) {
+            return;
+        }
 
         // Check if player can continue: must have moves left AND possible moves available
         if (_hasBlackMovesLeft() == false || !hasBlackPossibleMove()) {

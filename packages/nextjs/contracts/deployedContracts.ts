@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     Backgammon: {
-      address: "0x29a79095352a718b3d7fe84e1f14e9f34a35598e",
+      address: "0x33b1b5aa9aa4da83a332f0bc5cac6a903fde5d92",
       abi: [
         {
           type: "constructor",
@@ -272,6 +272,19 @@ const deployedContracts = {
           stateMutability: "view",
         },
         {
+          type: "function",
+          name: "winner",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint8",
+              internalType: "uint8",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
           type: "event",
           name: "BlackTurn",
           inputs: [
@@ -317,6 +330,19 @@ const deployedContracts = {
         },
         {
           type: "event",
+          name: "GameWon",
+          inputs: [
+            {
+              name: "winner",
+              type: "uint8",
+              indexed: false,
+              internalType: "uint8",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
           name: "TurnSwitched",
           inputs: [
             {
@@ -349,7 +375,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 91,
+      deployedOnBlock: 101,
     },
   },
 } as const;
