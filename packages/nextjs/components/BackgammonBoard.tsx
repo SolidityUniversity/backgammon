@@ -3,26 +3,13 @@
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 export const BackgammonBoard = () => {
-  // Read dead white checkers (cell 0)
+  // Read cell 0: dead white checkers (☠️) and saved black checkers (⛳️)
   const white0 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [0n] });
-  // Read dead black checkers (cell 0)
   const black0 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [0n] });
 
-  // Read white checkers outside board (cells 25-30)
+  // Read cell 25: dead black checkers (☠️) and saved white checkers (⛳️)
   const white25 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [25n] });
-  const white26 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [26n] });
-  const white27 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [27n] });
-  const white28 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [28n] });
-  const white29 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [29n] });
-  const white30 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [30n] });
-
-  // Read black checkers outside board (cells 25-30)
   const black25 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [25n] });
-  const black26 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [26n] });
-  const black27 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [27n] });
-  const black28 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [28n] });
-  const black29 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [29n] });
-  const black30 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [30n] });
 
   // Read white positions for cells 1-24 (cell 0 is reserved for dead checkers)
   const white1 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [1n] });
@@ -134,26 +121,21 @@ export const BackgammonBoard = () => {
   const white = whiteReads.map(read => read.data || 0n);
   const black = blackReads.map(read => read.data || 0n);
 
-  // Dead white checkers count
+  // Cell 0: dead white checkers (☠️) and saved black checkers (⛳️)
   const deadWhiteCount = Number(white0.data || 0);
-  // Dead black checkers count
-  const deadBlackCount = Number(black0.data || 0);
+  const savedBlackCount = Number(black0.data || 0);
 
-  // White checkers outside board count (cells 25-30)
-  const whiteOutsideReads = [white25, white26, white27, white28, white29, white30];
-  const whiteOutsideCount = whiteOutsideReads.reduce((sum, read) => sum + Number(read.data || 0n), 0);
-
-  // Black checkers outside board count (cells 25-30)
-  const blackOutsideReads = [black25, black26, black27, black28, black29, black30];
-  const blackOutsideCount = blackOutsideReads.reduce((sum, read) => sum + Number(read.data || 0n), 0);
+  // Cell 25: dead black checkers (☠️) and saved white checkers (⛳️)
+  const deadBlackCount = Number(black25.data || 0);
+  const savedWhiteCount = Number(white25.data || 0);
 
   const isLoading =
     whiteReads.some(r => r.isLoading) ||
     blackReads.some(r => r.isLoading) ||
     white0.isLoading ||
     black0.isLoading ||
-    whiteOutsideReads.some(r => r.isLoading) ||
-    blackOutsideReads.some(r => r.isLoading);
+    white25.isLoading ||
+    black25.isLoading;
 
   if (isLoading) {
     return (
@@ -229,41 +211,41 @@ export const BackgammonBoard = () => {
       <div className="bg-amber-100 rounded-lg p-6 shadow-xl">
         <h2 className="text-2xl font-bold text-center mb-6 text-amber-900">Backgammon Board</h2>
 
-        {/* Dead white checkers section - top right */}
-        {deadWhiteCount > 0 && (
-          <div className="flex justify-end items-start mb-4">
-            <div className="flex items-center gap-2">
-              <div className="text-4xl">☠️</div>
-              <div className="flex gap-2">
-                {Array.from({ length: deadWhiteCount }).map((_, i) => (
-                  <div
-                    key={`dead-white-${i}`}
-                    className="w-10 h-10 rounded-full bg-white border-2 border-gray-400 shadow-md flex items-center justify-center"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
-                  </div>
-                ))}
+        {/* Top section: dead white (☠️) and saved white (⛳️) */}
+        {(deadWhiteCount > 0 || savedWhiteCount > 0) && (
+          <div className="flex justify-end items-start mb-4 gap-4">
+            {/* Dead white checkers (☠️) */}
+            {deadWhiteCount > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="text-4xl">☠️</div>
+                <div className="flex gap-2">
+                  {Array.from({ length: deadWhiteCount }).map((_, i) => (
+                    <div
+                      key={`dead-white-${i}`}
+                      className="w-10 h-10 rounded-full bg-white border-2 border-gray-400 shadow-md flex items-center justify-center"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* White checkers outside board section - top right */}
-        {whiteOutsideCount > 0 && (
-          <div className="flex justify-end items-start mb-4">
-            <div className="flex items-center gap-2">
-              <div className="text-4xl">⛳️</div>
-              <div className="flex gap-2">
-                {Array.from({ length: whiteOutsideCount }).map((_, i) => (
-                  <div
-                    key={`outside-white-${i}`}
-                    className="w-10 h-10 rounded-full bg-white border-2 border-gray-400 shadow-md flex items-center justify-center"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
-                  </div>
-                ))}
+            )}
+            {/* Saved white checkers (⛳️) */}
+            {savedWhiteCount > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="text-4xl">⛳️</div>
+                <div className="flex gap-2">
+                  {Array.from({ length: savedWhiteCount }).map((_, i) => (
+                    <div
+                      key={`saved-white-${i}`}
+                      className="w-10 h-10 rounded-full bg-white border-2 border-gray-400 shadow-md flex items-center justify-center"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -277,41 +259,41 @@ export const BackgammonBoard = () => {
           {Array.from({ length: 12 }, (_, i) => 13 + i).map(cell => renderPoint(cell, false))}
         </div>
 
-        {/* Dead black checkers section - bottom right */}
-        {deadBlackCount > 0 && (
-          <div className="flex justify-end items-start mt-4">
-            <div className="flex items-center gap-2">
-              <div className="text-4xl">☠️</div>
-              <div className="flex gap-2">
-                {Array.from({ length: deadBlackCount }).map((_, i) => (
-                  <div
-                    key={`dead-black-${i}`}
-                    className="w-10 h-10 rounded-full bg-gray-800 border-2 border-gray-900 shadow-md flex items-center justify-center"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-gray-900"></div>
-                  </div>
-                ))}
+        {/* Bottom section: dead black (☠️) and saved black (⛳️) */}
+        {(deadBlackCount > 0 || savedBlackCount > 0) && (
+          <div className="flex justify-end items-start mt-4 gap-4">
+            {/* Dead black checkers (☠️) */}
+            {deadBlackCount > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="text-4xl">☠️</div>
+                <div className="flex gap-2">
+                  {Array.from({ length: deadBlackCount }).map((_, i) => (
+                    <div
+                      key={`dead-black-${i}`}
+                      className="w-10 h-10 rounded-full bg-gray-800 border-2 border-gray-900 shadow-md flex items-center justify-center"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-gray-900"></div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Black checkers outside board section - bottom right */}
-        {blackOutsideCount > 0 && (
-          <div className="flex justify-end items-start mt-4">
-            <div className="flex items-center gap-2">
-              <div className="text-4xl">⛳️</div>
-              <div className="flex gap-2">
-                {Array.from({ length: blackOutsideCount }).map((_, i) => (
-                  <div
-                    key={`outside-black-${i}`}
-                    className="w-10 h-10 rounded-full bg-gray-800 border-2 border-gray-900 shadow-md flex items-center justify-center"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-gray-900"></div>
-                  </div>
-                ))}
+            )}
+            {/* Saved black checkers (⛳️) */}
+            {savedBlackCount > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="text-4xl">⛳️</div>
+                <div className="flex gap-2">
+                  {Array.from({ length: savedBlackCount }).map((_, i) => (
+                    <div
+                      key={`saved-black-${i}`}
+                      className="w-10 h-10 rounded-full bg-gray-800 border-2 border-gray-900 shadow-md flex items-center justify-center"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-gray-900"></div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

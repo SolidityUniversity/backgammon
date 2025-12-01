@@ -2,12 +2,24 @@
 pragma solidity ^0.8.30;
 
 contract Backgammon {
-    uint256[31] public white;
-    uint256[31] public black;
+    uint256[26] public white;
+    uint256[26] public black;
 
     bool public isItBlackTurn;
 
+    // Available moves for white player (up to 4 moves for doubles)
+    // Value 0 means the move is used/unavailable
+    uint256[4] public whiteAvailableMoves;
+    uint256 public whiteMovesCount; // Number of available moves (2 for normal, 4 for doubles)
+
+    // Available moves for black player (up to 4 moves for doubles)
+    // Value 0 means the move is used/unavailable
+    uint256[4] public blackAvailableMoves;
+    uint256 public blackMovesCount; // Number of available moves (2 for normal, 4 for doubles)
+
     event WhiteTurn(uint256 _from, uint256 _to);
+    event DiceRolled(bool isBlack, uint256 dice1, uint256 dice2);
+    event TurnSwitched(bool isBlackTurn);
 
     constructor() {
         // black: [0,0,0,0,0,5,0,3,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,2]
@@ -22,20 +34,281 @@ contract Backgammon {
         white[19] = 5;
     }
 
-    function _moveWhite(uint256 _from, uint256 _to) public {
-        //msg.sender = whiteplayer?
+    // Roll dice for white player (in real game, this would be done off-chain or with oracle)
+    // For now, we'll let the player set their dice values
+    function rollDiceWhite(uint256 _dice1, uint256 _dice2) public {
         require(!isItBlackTurn, "Is Black Turn");
-        // require(deadWhiteCheckers == 0, "There is Dead white checkers");
-        require(_from != _to, "_from and _to should be different");
+        require(_dice1 >= 1 && _dice1 <= 6, "Dice1 must be between 1 and 6");
+        require(_dice2 >= 1 && _dice2 <= 6, "Dice2 must be between 1 and 6");
 
+        // Reset all moves
+        for (uint256 i = 0; i < 4; i++) {
+            whiteAvailableMoves[i] = 0;
+        }
+
+        // Check if it's a double (same value on both dice)
+        if (_dice1 == _dice2) {
+            // Double: player gets 4 moves with the same value
+            whiteMovesCount = 4;
+            for (uint256 i = 0; i < 4; i++) {
+                whiteAvailableMoves[i] = _dice1;
+            }
+        } else {
+            // Normal roll: player gets 2 moves with different values
+            whiteMovesCount = 2;
+            whiteAvailableMoves[0] = _dice1;
+            whiteAvailableMoves[1] = _dice2;
+        }
+
+        emit DiceRolled(false, _dice1, _dice2);
+
+        // Check if there are any possible moves after rolling dice
+        // If no moves are possible, switch turn to black
+        if (!hasWhitePossibleMove()) {
+            isItBlackTurn = true;
+            emit TurnSwitched(true);
+        }
+    }
+
+    // Move white checker - validates that the move distance matches an available move
+    function moveWhite(uint256 _from, uint256 _to) public {
+        require(!isItBlackTurn, "Is Black Turn");
+        require(_from != _to, "_from and _to should be different");
+        require(white[_from] > 0, "There is no white checkers on _from");
+
+        // Handle bear off (moving to position 25)
+        if (_to == 25) {
+            _handleBearOff(_from);
+            return;
+        }
+
+        // Regular move validation
+        require(black[_to] < 2, "White cant go there");
+
+        // If there are dead checkers, must move them first
+        if (white[0] != 0) {
+            require(_from == 0, "You must move dead checkers first");
+        }
+
+        // Calculate move distance (white moves from lower to higher numbers: 0->1->24->25)
+        uint256 moveDistance;
+        if (_to > _from) {
+            moveDistance = _to - _from;
+        } else {
+            // Can't move backwards
+            revert("Invalid move direction");
+        }
+
+        // Find and use an available move that matches the distance
+        bool moveFound = false;
+        for (uint256 i = 0; i < whiteMovesCount; i++) {
+            if (whiteAvailableMoves[i] == moveDistance) {
+                whiteAvailableMoves[i] = 0; // Mark as used
+                moveFound = true;
+                break;
+            }
+        }
+
+        require(moveFound, "Move distance must match an available move");
+
+        // Execute the move
+        _executeWhiteMove(_from, _to);
+
+        // Check if player can continue: must have moves left AND possible moves available
+        if (_hasWhiteMovesLeft() == false || !hasWhitePossibleMove()) {
+            isItBlackTurn = true;
+            emit TurnSwitched(true);
+        }
+    }
+
+    // Handle bear off (moving checkers off the board to position 25)
+    function _handleBearOff(uint256 _from) internal {
+        // Check bear off conditions: no dead checkers and all checkers in home board (19-24)
+        require(white[0] == 0, "Cannot bear off while there are dead checkers");
+        require(
+            _isAllCheckersInHomeBoard(),
+            "All checkers must be in home board (19-24) to bear off"
+        );
+        require(
+            _from >= 19 && _from <= 24,
+            "Can only bear off from positions 19-24"
+        );
+        require(white[_from] > 0, "No checkers on this position");
+
+        // Find the furthest position with checkers (19-24)
+        uint256 furthestPosition = 0;
+        for (uint256 pos = 19; pos <= 24; pos++) {
+            if (white[pos] > 0) {
+                furthestPosition = pos;
+            }
+        }
+
+        // Calculate required distance to bear off from _from
+        uint256 requiredDistance = 25 - _from;
+
+        // Find and use an available move
+        bool moveFound = false;
+        uint256 usedDiceIndex = 0;
+        uint256 usedDiceValue = 0;
+
+        // Find smallest available dice >= requiredDistance
+        uint256 smallestDice = 7; // Greater than max dice value
+        for (uint256 i = 0; i < whiteMovesCount; i++) {
+            if (
+                whiteAvailableMoves[i] >= requiredDistance &&
+                whiteAvailableMoves[i] < smallestDice
+            ) {
+                smallestDice = whiteAvailableMoves[i];
+                usedDiceIndex = i;
+                moveFound = true;
+            }
+        }
+
+        require(moveFound, "No available dice for bear off");
+
+        usedDiceValue = whiteAvailableMoves[usedDiceIndex];
+        whiteAvailableMoves[usedDiceIndex] = 0;
+
+        // If dice value is greater than required (overkill), must bear off from furthest position
+        if (usedDiceValue > requiredDistance) {
+            require(
+                _from == furthestPosition,
+                "When using overkill dice, must bear off from furthest position"
+            );
+        }
+        // If dice value equals required distance, can bear off from any position (no restriction)
+
+        require(moveFound, "No available dice for bear off");
+
+        // Execute the bear off move
+        white[_from] -= 1;
+        white[25] += 1; // Move to saved checkers area
+        emit WhiteTurn(_from, 25);
+
+        // Check if player can continue: must have moves left AND possible moves available
+        if (_hasWhiteMovesLeft() == false || !hasWhitePossibleMove()) {
+            isItBlackTurn = true;
+            emit TurnSwitched(true);
+        }
+    }
+
+    // Check if all white checkers are in home board (positions 19-24)
+    function _isAllCheckersInHomeBoard() internal view returns (bool) {
+        // Check positions 1-18 (should be empty)
+        for (uint256 i = 1; i <= 18; i++) {
+            if (white[i] > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Check if white player has any moves left (available dice)
+    function _hasWhiteMovesLeft() internal view returns (bool) {
+        for (uint256 i = 0; i < whiteMovesCount; i++) {
+            if (whiteAvailableMoves[i] > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Check if white player has any physically possible move
+    function hasWhitePossibleMove() public view returns (bool) {
+        // If there are no available dice, no moves possible
+        if (!_hasWhiteMovesLeft()) {
+            return false;
+        }
+
+        // Check each available move
+        for (uint256 i = 0; i < whiteMovesCount; i++) {
+            uint256 moveDistance = whiteAvailableMoves[i];
+            if (moveDistance == 0) continue; // Skip used moves
+
+            // If there are dead checkers, check if we can move them
+            if (white[0] > 0) {
+                uint256 to = moveDistance; // From 0 (dead) to moveDistance
+                if (to <= 24 && black[to] < 2) {
+                    return true; // Can move dead checker
+                }
+            } else {
+                // Check if all checkers are in home board (can bear off)
+                bool canBearOff = _isAllCheckersInHomeBoard();
+
+                // Find furthest position with checkers (for bear off logic)
+                uint256 furthestPosition = 0;
+                if (canBearOff) {
+                    for (uint256 pos = 19; pos <= 24; pos++) {
+                        if (white[pos] > 0) {
+                            furthestPosition = pos;
+                        }
+                    }
+                }
+
+                // Check all positions with white checkers
+                for (uint256 from = 1; from <= 24; from++) {
+                    if (white[from] > 0) {
+                        uint256 to = from + moveDistance;
+                        // Check if move is valid (within board or bear off)
+                        if (to <= 25) {
+                            // Regular move within board
+                            if (to <= 24 && black[to] < 2) {
+                                return true; // Valid move found
+                            }
+                            // Bear off (to == 25)
+                            if (to == 25 && canBearOff) {
+                                uint256 requiredDistance = 25 - from;
+                                // If dice exactly matches required distance, can bear off from any position
+                                if (moveDistance == requiredDistance) {
+                                    return true;
+                                }
+                                // If dice is greater (overkill), can only bear off from furthest position
+                                if (
+                                    moveDistance > requiredDistance &&
+                                    from == furthestPosition
+                                ) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false; // No valid moves found
+    }
+
+    // Internal function to execute white checker movement
+    function _executeWhiteMove(uint256 _from, uint256 _to) internal {
+        // Move checker from source to destination
+        white[_from] -= 1;
+
+        // If landing on opponent's single checker, send it to bar
+        if (black[_to] == 1) {
+            black[_to] -= 1;
+            black[25]++; // Black's dead checkers go to cell 25
+        }
+
+        white[_to] += 1;
+        emit WhiteTurn(_from, _to);
+    }
+
+    // Internal function for testing/debugging (can be removed later)
+    function _moveWhite(uint256 _from, uint256 _to) public {
+        require(!isItBlackTurn, "Is Black Turn");
+        require(_from != _to, "_from and _to should be different");
         require(white[_from] > 0, "There is no white checkers on _from");
         require(black[_to] < 2, "White cant go there");
+        if (white[0] != 0) {
+            require(_from == 0, "You must move dead checkers");
+        }
 
         white[_from] -= 1;
 
         if (black[_to] == 1) {
             black[_to] -= 1;
-            black[0]++;
+            black[25]++;
         }
 
         white[_to] += 1;
