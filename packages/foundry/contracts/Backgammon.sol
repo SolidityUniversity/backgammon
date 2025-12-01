@@ -7,6 +7,9 @@ contract Backgammon {
 
     bool public isItBlackTurn;
 
+    // Flag to check if white player has rolled dice for current turn
+    bool public whiteDiceRolled;
+
     // Available moves for white player (up to 4 moves for doubles)
     // Value 0 means the move is used/unavailable
     uint256[4] public whiteAvailableMoves;
@@ -34,12 +37,43 @@ contract Backgammon {
         white[19] = 5;
     }
 
-    // Roll dice for white player (in real game, this would be done off-chain or with oracle)
-    // For now, we'll let the player set their dice values
-    function rollDiceWhite(uint256 _dice1, uint256 _dice2) public {
+    // Generate pseudo-random dice values (1-6)
+    function _generateRandomDice()
+        internal
+        view
+        returns (uint256 dice1, uint256 dice2)
+    {
+        // Use block properties and sender address for pseudo-randomness
+        uint256 seed = uint256(
+            keccak256(
+                abi.encodePacked(
+                    block.timestamp,
+                    block.prevrandao,
+                    blockhash(block.number - 1),
+                    msg.sender
+                )
+            )
+        );
+
+        // Generate first dice (1-6)
+        dice1 = (seed % 6) + 1;
+
+        // Generate second dice from different part of seed
+        uint256 seed2 = uint256(
+            keccak256(abi.encodePacked(seed, block.timestamp))
+        );
+        dice2 = (seed2 % 6) + 1;
+    }
+
+    // Roll dice for white player with auto-generated random values
+    function rollDiceWhite() public returns (uint256 dice1, uint256 dice2) {
         require(!isItBlackTurn, "Is Black Turn");
-        require(_dice1 >= 1 && _dice1 <= 6, "Dice1 must be between 1 and 6");
-        require(_dice2 >= 1 && _dice2 <= 6, "Dice2 must be between 1 and 6");
+
+        // Generate random dice values
+        (uint256 _dice1, uint256 _dice2) = _generateRandomDice();
+
+        // Mark that dice have been rolled for this turn
+        whiteDiceRolled = true;
 
         // Reset all moves
         for (uint256 i = 0; i < 4; i++) {
@@ -66,13 +100,18 @@ contract Backgammon {
         // If no moves are possible, switch turn to black
         if (!hasWhitePossibleMove()) {
             isItBlackTurn = true;
+            whiteDiceRolled = false; // Reset dice flag for next turn
             emit TurnSwitched(true);
         }
+
+        // Return the dice values
+        return (_dice1, _dice2);
     }
 
     // Move white checker - validates that the move distance matches an available move
     function moveWhite(uint256 _from, uint256 _to) public {
         require(!isItBlackTurn, "Is Black Turn");
+        require(whiteDiceRolled, "Must roll dice before making a move");
         require(_from != _to, "_from and _to should be different");
         require(white[_from] > 0, "There is no white checkers on _from");
 
@@ -117,6 +156,7 @@ contract Backgammon {
         // Check if player can continue: must have moves left AND possible moves available
         if (_hasWhiteMovesLeft() == false || !hasWhitePossibleMove()) {
             isItBlackTurn = true;
+            whiteDiceRolled = false; // Reset dice flag for next turn
             emit TurnSwitched(true);
         }
     }
@@ -188,6 +228,7 @@ contract Backgammon {
         // Check if player can continue: must have moves left AND possible moves available
         if (_hasWhiteMovesLeft() == false || !hasWhitePossibleMove()) {
             isItBlackTurn = true;
+            whiteDiceRolled = false; // Reset dice flag for next turn
             emit TurnSwitched(true);
         }
     }
