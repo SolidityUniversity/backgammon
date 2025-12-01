@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     Backgammon: {
-      address: "0x2a264f26859166c5bf3868a54593ee716aebc848",
+      address: "0xd04ff4a75edd737a73e92b2f2274cb887d96e110",
       abi: [
         {
           type: "constructor",
@@ -72,6 +72,19 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "blackDiceRolled",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "blackMovesCount",
           inputs: [],
           outputs: [
@@ -79,6 +92,19 @@ const deployedContracts = {
               name: "",
               type: "uint256",
               internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "hasBlackPossibleMove",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
             },
           ],
           stateMutability: "view",
@@ -111,6 +137,24 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "moveBlack",
+          inputs: [
+            {
+              name: "_from",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_to",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "moveWhite",
           inputs: [
             {
@@ -125,6 +169,24 @@ const deployedContracts = {
             },
           ],
           outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "rollDiceBlack",
+          inputs: [],
+          outputs: [
+            {
+              name: "dice1",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "dice2",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
           stateMutability: "nonpayable",
         },
         {
@@ -211,6 +273,25 @@ const deployedContracts = {
         },
         {
           type: "event",
+          name: "BlackTurn",
+          inputs: [
+            {
+              name: "_from",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+            {
+              name: "_to",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
           name: "DiceRolled",
           inputs: [
             {
@@ -268,7 +349,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 29,
+      deployedOnBlock: 35,
     },
   },
 } as const;
