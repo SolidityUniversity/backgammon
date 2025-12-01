@@ -1,0 +1,212 @@
+"use client";
+
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+
+export const BackgammonBoard = () => {
+  // Read all white positions - all hooks must be called at top level
+  const white0 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [0n] });
+  const white1 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [1n] });
+  const white2 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [2n] });
+  const white3 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [3n] });
+  const white4 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [4n] });
+  const white5 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [5n] });
+  const white6 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [6n] });
+  const white7 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [7n] });
+  const white8 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [8n] });
+  const white9 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [9n] });
+  const white10 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [10n] });
+  const white11 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [11n] });
+  const white12 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [12n] });
+  const white13 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [13n] });
+  const white14 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [14n] });
+  const white15 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [15n] });
+  const white16 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [16n] });
+  const white17 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [17n] });
+  const white18 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [18n] });
+  const white19 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [19n] });
+  const white20 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [20n] });
+  const white21 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [21n] });
+  const white22 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [22n] });
+  const white23 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "white", args: [23n] });
+
+  // Read all black positions
+  const black0 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [0n] });
+  const black1 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [1n] });
+  const black2 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [2n] });
+  const black3 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [3n] });
+  const black4 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [4n] });
+  const black5 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [5n] });
+  const black6 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [6n] });
+  const black7 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [7n] });
+  const black8 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [8n] });
+  const black9 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [9n] });
+  const black10 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [10n] });
+  const black11 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [11n] });
+  const black12 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [12n] });
+  const black13 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [13n] });
+  const black14 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [14n] });
+  const black15 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [15n] });
+  const black16 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [16n] });
+  const black17 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [17n] });
+  const black18 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [18n] });
+  const black19 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [19n] });
+  const black20 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [20n] });
+  const black21 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [21n] });
+  const black22 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [22n] });
+  const black23 = useScaffoldReadContract({ contractName: "Backgammon", functionName: "black", args: [23n] });
+
+  const whiteReads = [
+    white0,
+    white1,
+    white2,
+    white3,
+    white4,
+    white5,
+    white6,
+    white7,
+    white8,
+    white9,
+    white10,
+    white11,
+    white12,
+    white13,
+    white14,
+    white15,
+    white16,
+    white17,
+    white18,
+    white19,
+    white20,
+    white21,
+    white22,
+    white23,
+  ];
+
+  const blackReads = [
+    black0,
+    black1,
+    black2,
+    black3,
+    black4,
+    black5,
+    black6,
+    black7,
+    black8,
+    black9,
+    black10,
+    black11,
+    black12,
+    black13,
+    black14,
+    black15,
+    black16,
+    black17,
+    black18,
+    black19,
+    black20,
+    black21,
+    black22,
+    black23,
+  ];
+
+  const white = blackReads.map(read => read.data || 0n);
+  const black = whiteReads.map(read => read.data || 0n);
+
+  const isLoading = whiteReads.some(r => r.isLoading) || blackReads.some(r => r.isLoading);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
+  const renderPoint = (index: number, isTop: boolean) => {
+    const whiteCount = Number(white[index] || 0);
+    const blackCount = Number(black[index] || 0);
+    const totalCount = whiteCount + blackCount;
+
+    return (
+      <div key={index} className="relative w-16 h-64">
+        {/* Triangle background */}
+        <div
+          className={`absolute inset-0 ${isTop ? "justify-start" : "justify-end"}`}
+          style={{
+            clipPath: isTop ? "polygon(0 0, 100% 0, 50% 100%)" : "polygon(50% 0, 100% 100%, 0 100%)",
+            backgroundColor: index % 2 === 0 ? "#d4a574" : "#8b6f47",
+          }}
+        ></div>
+
+        {/* Point number */}
+        <div
+          className={`absolute z-10 ${isTop ? "top-2" : "bottom-2"} left-1/2 transform -translate-x-1/2 text-xs font-bold text-base-content/60`}
+        >
+          {index}
+        </div>
+
+        {/* Checkers */}
+        <div
+          className={`absolute z-30 left-1/2 transform -translate-x-1/2 flex flex-col gap-1 ${isTop ? "top-8" : "bottom-8"} ${totalCount > 0 ? "items-center" : ""}`}
+        >
+          {/* White checkers */}
+          {Array.from({ length: whiteCount }).map((_, i) => (
+            <div
+              key={`white-${i}`}
+              className="w-10 h-10 rounded-full bg-white border-2 border-gray-400 shadow-md flex items-center justify-center"
+            >
+              <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
+            </div>
+          ))}
+
+          {/* Black checkers */}
+          {Array.from({ length: blackCount }).map((_, i) => (
+            <div
+              key={`black-${i}`}
+              className="w-10 h-10 rounded-full bg-gray-800 border-2 border-gray-900 shadow-md flex items-center justify-center"
+            >
+              <div className="w-6 h-6 rounded-full bg-gray-900"></div>
+            </div>
+          ))}
+
+          {/* Count indicator if more than 5 checkers */}
+          {totalCount > 5 && (
+            <div className="text-xs font-bold text-base-content bg-base-100 rounded-full w-6 h-6 flex items-center justify-center border border-base-content/20">
+              {totalCount}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto p-4">
+      <div className="bg-amber-100 rounded-lg p-6 shadow-xl">
+        <h2 className="text-2xl font-bold text-center mb-6 text-amber-900">Backgammon Board</h2>
+
+        {/* Top half: points 11-0 (right to left) */}
+        <div className="flex gap-4 mb-[100px]">
+          {Array.from({ length: 12 }, (_, i) => 11 - i).map(index => renderPoint(index, true))}
+        </div>
+
+        {/* Bottom half: points 12-23 (left to right) */}
+        <div className="flex gap-4">
+          {Array.from({ length: 12 }, (_, i) => 12 + i).map(index => renderPoint(index, false))}
+        </div>
+
+        {/* Legend */}
+        <div className="flex justify-center gap-8 mt-6">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-white border-2 border-gray-400"></div>
+            <span className="text-sm font-medium">White</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gray-800 border-2 border-gray-900"></div>
+            <span className="text-sm font-medium">Black</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
