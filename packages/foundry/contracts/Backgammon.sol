@@ -25,13 +25,27 @@ contract Backgammon {
     // Winner: 0 = no winner, 1 = white, 2 = black
     uint8 public winner;
 
+    // Staking system
+    address public whitePlayer; // First player (white)
+    address public blackPlayer; // Second player (black)
+    uint256 public stakeAmount; // Amount each player must stake
+    bool public gameStarted; // True when both players have staked
+    bool public fundsWithdrawn; // True when winner has withdrawn funds
+
     event WhiteTurn(uint256 _from, uint256 _to);
     event BlackTurn(uint256 _from, uint256 _to);
     event DiceRolled(bool isBlack, uint256 dice1, uint256 dice2);
     event TurnSwitched(bool isBlackTurn);
     event GameWon(uint8 winner);
+    event StakeDeposited(address player, uint256 amount);
+    event GameStarted(
+        address whitePlayer,
+        address blackPlayer,
+        uint256 stakeAmount
+    );
+    event FundsWithdrawn(address winner, uint256 amount);
 
-    constructor() {
+    constructor() payable {
         // black: [0,0,0,0,0,5,0,3,0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,2]
         black[6] = 5;
         black[8] = 3;
@@ -42,12 +56,99 @@ contract Backgammon {
         white[12] = 5;
         white[17] = 3;
         white[19] = 5;
+
+        // If constructor is called with value, set first player and stake
+        if (msg.value > 0) {
+            whitePlayer = msg.sender;
+            stakeAmount = msg.value;
+            emit StakeDeposited(msg.sender, msg.value);
+        }
     }
 
     // Modifier to check if game is not finished
     modifier gameNotFinished() {
         require(winner == 0, "Game is finished");
         _;
+    }
+
+    // Modifier to check if game has started (both players staked)
+    modifier gameHasStarted() {
+        require(gameStarted, "Game has not started yet");
+        _;
+    }
+
+    // Function for first player to deposit stake (if not done in constructor)
+    function depositStake() public payable {
+        require(whitePlayer == address(0), "First player already set");
+        require(msg.value > 0, "Must send ETH");
+        whitePlayer = msg.sender;
+        stakeAmount = msg.value;
+        emit StakeDeposited(msg.sender, msg.value);
+    }
+
+    // Function for second player to join the game
+    function joinGame() public payable {
+        require(
+            whitePlayer != address(0),
+            "First player must deposit stake first"
+        );
+        require(blackPlayer == address(0), "Second player already set");
+        require(
+            msg.value == stakeAmount,
+            "Must send the same amount as first player"
+        );
+        require(msg.sender != whitePlayer, "Cannot play against yourself");
+        blackPlayer = msg.sender;
+        gameStarted = true;
+        emit StakeDeposited(msg.sender, msg.value);
+        emit GameStarted(whitePlayer, blackPlayer, stakeAmount);
+    }
+
+    // Function for winner to withdraw funds
+    function withdraw() public {
+        require(winner > 0, "Game is not finished");
+        require(!fundsWithdrawn, "Funds already withdrawn");
+        require(
+            (winner == 1 && msg.sender == whitePlayer) ||
+                (winner == 2 && msg.sender == blackPlayer),
+            "Only winner can withdraw"
+        );
+
+        fundsWithdrawn = true;
+        uint256 totalPrize = stakeAmount * 2; // Both players' stakes
+        (bool success, ) = payable(msg.sender).call{value: totalPrize}("");
+        require(success, "Withdrawal failed");
+        emit FundsWithdrawn(msg.sender, totalPrize);
+    }
+
+    // Get contract balance
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    // Get game status information
+    function getGameInfo()
+        public
+        view
+        returns (
+            address _whitePlayer,
+            address _blackPlayer,
+            uint256 _stakeAmount,
+            bool _gameStarted,
+            uint8 _winner,
+            bool _fundsWithdrawn,
+            uint256 _balance
+        )
+    {
+        return (
+            whitePlayer,
+            blackPlayer,
+            stakeAmount,
+            gameStarted,
+            winner,
+            fundsWithdrawn,
+            address(this).balance
+        );
     }
 
     // Check for win condition and set winner if game is won
@@ -96,9 +197,11 @@ contract Backgammon {
     function rollDiceWhite()
         public
         gameNotFinished
+        gameHasStarted
         returns (uint256 dice1, uint256 dice2)
     {
         require(!isItBlackTurn, "Is Black Turn");
+        require(msg.sender == whitePlayer, "Only white player can roll dice");
 
         // Generate random dice values
         (uint256 _dice1, uint256 _dice2) = _generateRandomDice();
@@ -141,8 +244,12 @@ contract Backgammon {
     }
 
     // Move white checker - validates that the move distance matches an available move
-    function moveWhite(uint256 _from, uint256 _to) public gameNotFinished {
+    function moveWhite(
+        uint256 _from,
+        uint256 _to
+    ) public gameNotFinished gameHasStarted {
         require(!isItBlackTurn, "Is Black Turn");
+        require(msg.sender == whitePlayer, "Only white player can move");
         require(whiteDiceRolled, "Must roll dice before making a move");
         require(_from != _to, "_from and _to should be different");
         require(white[_from] > 0, "There is no white checkers on _from");
@@ -376,7 +483,7 @@ contract Backgammon {
     }
 
     // Internal function for testing/debugging (can be removed later)
-    function _moveWhite(uint256 _from, uint256 _to) public {
+    function _moveWhite(uint256 _from, uint256 _to) public gameNotFinished {
         require(!isItBlackTurn, "Is Black Turn");
         require(_from != _to, "_from and _to should be different");
         require(white[_from] > 0, "There is no white checkers on _from");
@@ -402,9 +509,11 @@ contract Backgammon {
     function rollDiceBlack()
         public
         gameNotFinished
+        gameHasStarted
         returns (uint256 dice1, uint256 dice2)
     {
         require(isItBlackTurn, "Is White Turn");
+        require(msg.sender == blackPlayer, "Only black player can roll dice");
 
         // Generate random dice values
         (uint256 _dice1, uint256 _dice2) = _generateRandomDice();
@@ -447,8 +556,12 @@ contract Backgammon {
     }
 
     // Move black checker - validates that the move distance matches an available move
-    function moveBlack(uint256 _from, uint256 _to) public gameNotFinished {
+    function moveBlack(
+        uint256 _from,
+        uint256 _to
+    ) public gameNotFinished gameHasStarted {
         require(isItBlackTurn, "Is White Turn");
+        require(msg.sender == blackPlayer, "Only black player can move");
         require(blackDiceRolled, "Must roll dice before making a move");
         require(_from != _to, "_from and _to should be different");
         require(black[_from] > 0, "There is no black checkers on _from");

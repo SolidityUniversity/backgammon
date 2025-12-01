@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { getParsedError, notification } from "~~/utils/scaffold-eth";
 
 export const BackgammonBoard = () => {
   // State for selected fields
@@ -36,10 +37,79 @@ export const BackgammonBoard = () => {
     contractName: "Backgammon",
   });
 
+  // Parse error message and return user-friendly Russian message
+  const parseErrorMessage = (error: any): string => {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const parsedError = getParsedError(error);
+
+    // Check for specific error messages
+    if (errorMessage.includes("Is Black Turn") || errorMessage.includes("Is White Turn")) {
+      return "Сейчас не ваш ход!";
+    }
+    if (errorMessage.includes("Must roll dice before making a move")) {
+      return "Сначала нужно бросить кости!";
+    }
+    if (errorMessage.includes("There is no") && errorMessage.includes("checkers on")) {
+      return "На этом поле нет фишек!";
+    }
+    if (errorMessage.includes("cant go there") || errorMessage.includes("can't go there")) {
+      return "Нельзя ходить на это поле (там 2 или более фишек противника)!";
+    }
+    if (errorMessage.includes("You must move dead checkers first")) {
+      return "Сначала нужно вернуть фишки с бара!";
+    }
+    if (errorMessage.includes("Invalid move direction")) {
+      return "Неверное направление хода!";
+    }
+    if (errorMessage.includes("Move distance must match an available move")) {
+      return "Расстояние хода не совпадает с выпавшими костями!";
+    }
+    if (errorMessage.includes("Cannot bear off while there are dead checkers")) {
+      return "Нельзя выводить фишки, пока есть фишки на баре!";
+    }
+    if (errorMessage.includes("All checkers must be in home board")) {
+      if (errorMessage.includes("19-24")) {
+        return "Все фишки должны быть в доме (поля 19-24) для вывода!";
+      }
+      if (errorMessage.includes("6-1")) {
+        return "Все фишки должны быть в доме (поля 6-1) для вывода!";
+      }
+      return "Все фишки должны быть в доме для вывода!";
+    }
+    if (errorMessage.includes("Can only bear off from positions")) {
+      if (errorMessage.includes("19-24")) {
+        return "Можно выводить фишки только с полей 19-24!";
+      }
+      if (errorMessage.includes("1-6")) {
+        return "Можно выводить фишки только с полей 1-6!";
+      }
+      return "Нельзя выводить фишки с этого поля!";
+    }
+    if (errorMessage.includes("No checkers on this position")) {
+      return "На этой позиции нет фишек!";
+    }
+    if (errorMessage.includes("No available dice for bear off")) {
+      return "Нет доступных костей для вывода фишек!";
+    }
+    if (errorMessage.includes("When using overkill dice, must bear off from furthest position")) {
+      return "При использовании перебора нужно выводить с самой дальней позиции!";
+    }
+    if (errorMessage.includes("Game is finished")) {
+      return "Игра уже закончена!";
+    }
+    if (errorMessage.includes("_from and _to should be different")) {
+      return "Поле отправления и назначения должны быть разными!";
+    }
+
+    // If no specific match, return parsed error or generic message
+    return parsedError || "Произошла ошибка при выполнении хода";
+  };
+
   // Handle field click
   const handleFieldClick = async (cell: number) => {
     // Don't allow moves if game is finished
     if (winner > 0) {
+      notification.warning("Игра уже закончена!");
       return;
     }
 
@@ -48,12 +118,12 @@ export const BackgammonBoard = () => {
       // Check if there are dead checkers that must be moved first
       if (!isItBlackTurn && deadWhiteCount > 0 && cell !== 0) {
         // White player has dead checkers, must select field 0 first
-        alert("Сначала нужно вернуть фишки с бара (поле 0)!");
+        notification.warning("Сначала нужно вернуть фишки с бара (поле 0)!");
         return;
       }
       if (isItBlackTurn && deadBlackCount > 0 && cell !== 25) {
         // Black player has dead checkers, must select field 25 first
-        alert("Сначала нужно вернуть фишки с бара (поле 25)!");
+        notification.warning("Сначала нужно вернуть фишки с бара (поле 25)!");
         return;
       }
       setSelectedFrom(cell);
@@ -74,11 +144,9 @@ export const BackgammonBoard = () => {
         setSelectedFrom(null); // Reset selection
       } catch (error) {
         console.error("Error making move:", error);
-        // Show user-friendly error message
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes("You must move dead checkers first")) {
-          alert("Сначала нужно вернуть фишки с бара!");
-        }
+        // Parse and show user-friendly error message
+        const userMessage = parseErrorMessage(error);
+        notification.error(userMessage);
         setSelectedFrom(null); // Reset on error
       }
     }
@@ -554,6 +622,8 @@ export const BackgammonBoard = () => {
                       }
                     } catch (error) {
                       console.error("Error rolling dice:", error);
+                      const userMessage = parseErrorMessage(error);
+                      notification.error(userMessage);
                     }
                   }}
                 >
