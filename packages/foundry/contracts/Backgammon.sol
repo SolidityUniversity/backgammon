@@ -88,6 +88,11 @@ contract Backgammon {
 
     // Function for second player to join the game
     function joinGame() public payable {
+        _joinGame();
+    }
+
+    // Internal function to handle joining the game (used by joinGame and receive)
+    function _joinGame() internal {
         require(
             whitePlayer != address(0),
             "First player must deposit stake first"
@@ -102,6 +107,33 @@ contract Backgammon {
         gameStarted = true;
         emit StakeDeposited(msg.sender, msg.value);
         emit GameStarted(whitePlayer, blackPlayer, stakeAmount);
+    }
+
+    // Receive function - allows second player to join by simply sending ETH
+    receive() external payable {
+        // If first player is set and second player is not, try to join game
+        if (
+            whitePlayer != address(0) &&
+            blackPlayer == address(0) &&
+            msg.value == stakeAmount &&
+            msg.sender != whitePlayer
+        ) {
+            _joinGame();
+        } else {
+            // Otherwise, revert with appropriate error
+            if (whitePlayer == address(0)) {
+                revert("First player must deposit stake first");
+            }
+            if (blackPlayer != address(0)) {
+                revert("Second player already set");
+            }
+            if (msg.value != stakeAmount) {
+                revert("Must send the same amount as first player");
+            }
+            if (msg.sender == whitePlayer) {
+                revert("Cannot play against yourself");
+            }
+        }
     }
 
     // Function for winner to withdraw funds

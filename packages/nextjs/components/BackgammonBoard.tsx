@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Address } from "@scaffold-ui/components";
+import { formatEther } from "viem";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
 
 export const BackgammonBoard = () => {
@@ -21,6 +24,35 @@ export const BackgammonBoard = () => {
     functionName: "winner" as any,
   });
   const winner = winnerData !== undefined ? Number(winnerData) : 0;
+
+  // Read game info for staking
+  const { data: whitePlayerData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "whitePlayer" as any,
+  });
+  const { data: blackPlayerData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "blackPlayer" as any,
+  });
+  const { data: stakeAmountData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "stakeAmount" as any,
+  });
+  const { data: gameStartedData } = useScaffoldReadContract({
+    contractName: "Backgammon",
+    functionName: "gameStarted" as any,
+  });
+
+  const whitePlayer = whitePlayerData as string | undefined;
+  const blackPlayer = blackPlayerData as string | undefined;
+  const stakeAmount = stakeAmountData as bigint | undefined;
+  const gameStarted = gameStartedData as boolean | undefined;
+
+  // Get contract address
+  const { data: deployedContractData } = useDeployedContractInfo({
+    contractName: "Backgammon",
+  });
+  const contractAddress = deployedContractData?.address;
 
   // Read dice rolled status
   const { data: whiteDiceRolled } = useScaffoldReadContract({
@@ -434,8 +466,39 @@ export const BackgammonBoard = () => {
     );
   };
 
+  // Check if first player deposited but second hasn't joined yet
+  const isWaitingForSecondPlayer =
+    whitePlayer &&
+    typeof whitePlayer === "string" &&
+    whitePlayer !== "0x0000000000000000000000000000000000000000" &&
+    (!blackPlayer ||
+      (typeof blackPlayer === "string" && blackPlayer === "0x0000000000000000000000000000000000000000")) &&
+    !gameStarted;
+
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
+      {/* Challenge message */}
+      {isWaitingForSecondPlayer && contractAddress && stakeAmount && (
+        <div className="mb-6 bg-blue-50 border-2 border-blue-400 rounded-lg p-6 shadow-lg">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-blue-900 mb-3">🎮 Вам бросили вызов!</h3>
+            <p className="text-lg text-blue-800 mb-4">
+              Внесите <span className="font-bold">{formatEther(stakeAmount)} ETH</span> на адрес контракта для начала
+              игры
+            </p>
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-sm text-blue-700 font-medium">Адрес контракта:</div>
+              <div className="bg-white px-4 py-2 rounded-lg border border-blue-300">
+                <Address address={contractAddress} format="long" />
+              </div>
+              <div className="text-xs text-blue-600 mt-2">
+                Просто отправьте {formatEther(stakeAmount)} ETH на этот адрес, и игра начнется автоматически!
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-6">
         {/* Board */}
         <div className="bg-amber-100 rounded-lg p-6 shadow-xl flex-1">

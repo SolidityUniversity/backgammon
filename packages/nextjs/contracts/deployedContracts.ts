@@ -7,12 +7,12 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     Backgammon: {
-      address: "0x33b1b5aa9aa4da83a332f0bc5cac6a903fde5d92",
+      address: "0x19a1c09fe3399c4daaa2c98b936a8e460fc5eaa4",
       abi: [
         {
           type: "constructor",
           inputs: [],
-          stateMutability: "nonpayable",
+          stateMutability: "payable",
         },
         {
           type: "function",
@@ -98,6 +98,108 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "blackPlayer",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "depositStake",
+          inputs: [],
+          outputs: [],
+          stateMutability: "payable",
+        },
+        {
+          type: "function",
+          name: "fundsWithdrawn",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "gameStarted",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "bool",
+              internalType: "bool",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getBalance",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getGameInfo",
+          inputs: [],
+          outputs: [
+            {
+              name: "_whitePlayer",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "_blackPlayer",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "_stakeAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "_gameStarted",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
+              name: "_winner",
+              type: "uint8",
+              internalType: "uint8",
+            },
+            {
+              name: "_fundsWithdrawn",
+              type: "bool",
+              internalType: "bool",
+            },
+            {
+              name: "_balance",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "hasBlackPossibleMove",
           inputs: [],
           outputs: [
@@ -134,6 +236,13 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "joinGame",
+          inputs: [],
+          outputs: [],
+          stateMutability: "payable",
         },
         {
           type: "function",
@@ -209,6 +318,19 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "stakeAmount",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "white",
           inputs: [
             {
@@ -273,6 +395,19 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "whitePlayer",
+          inputs: [],
+          outputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "winner",
           inputs: [],
           outputs: [
@@ -283,6 +418,13 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "withdraw",
+          inputs: [],
+          outputs: [],
+          stateMutability: "nonpayable",
         },
         {
           type: "event",
@@ -330,6 +472,50 @@ const deployedContracts = {
         },
         {
           type: "event",
+          name: "FundsWithdrawn",
+          inputs: [
+            {
+              name: "winner",
+              type: "address",
+              indexed: false,
+              internalType: "address",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "GameStarted",
+          inputs: [
+            {
+              name: "whitePlayer",
+              type: "address",
+              indexed: false,
+              internalType: "address",
+            },
+            {
+              name: "blackPlayer",
+              type: "address",
+              indexed: false,
+              internalType: "address",
+            },
+            {
+              name: "stakeAmount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
           name: "GameWon",
           inputs: [
             {
@@ -337,6 +523,25 @@ const deployedContracts = {
               type: "uint8",
               indexed: false,
               internalType: "uint8",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "StakeDeposited",
+          inputs: [
+            {
+              name: "player",
+              type: "address",
+              indexed: false,
+              internalType: "address",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              indexed: false,
+              internalType: "uint256",
             },
           ],
           anonymous: false,
@@ -375,7 +580,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 101,
+      deployedOnBlock: 128,
     },
   },
 } as const;
