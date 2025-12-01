@@ -12,13 +12,13 @@ import { Header } from "~~/components/Header";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
-const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
+const ScaffoldEthApp = ({ children, hideHeader = false }: { children: React.ReactNode; hideHeader?: boolean }) => {
   return (
     <>
       <div className={`flex flex-col min-h-screen `}>
-        <Header />
+        {!hideHeader && <Header />}
         <main className="relative flex flex-col flex-1">{children}</main>
-        <Footer />
+        {!hideHeader && <Footer />}
       </div>
       <Toaster />
     </>
@@ -33,7 +33,13 @@ export const queryClient = new QueryClient({
   },
 });
 
-export const ScaffoldEthAppWithProviders = ({ children }: { children: React.ReactNode }) => {
+export const ScaffoldEthAppWithProviders = ({
+  children,
+  hideHeader = false,
+}: {
+  children: React.ReactNode;
+  hideHeader?: boolean;
+}) => {
   const { resolvedTheme } = useTheme();
   const isDarkMode = resolvedTheme === "dark";
   const [mounted, setMounted] = useState(false);
@@ -50,7 +56,7 @@ export const ScaffoldEthAppWithProviders = ({ children }: { children: React.Reac
           theme={mounted ? (isDarkMode ? darkTheme() : lightTheme()) : lightTheme()}
         >
           <ProgressBar height="3px" color="#2299dd" />
-          <ScaffoldEthApp>{children}</ScaffoldEthApp>
+          <ScaffoldEthApp hideHeader={hideHeader}>{children}</ScaffoldEthApp>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

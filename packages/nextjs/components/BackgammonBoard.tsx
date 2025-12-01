@@ -671,7 +671,7 @@ export const BackgammonBoard = () => {
       <div className="flex gap-6">
         {/* Board */}
         <div className="bg-amber-100 rounded-lg p-6 shadow-xl flex-1">
-          <h2 className="text-2xl font-bold text-center mb-6 text-amber-900">Backgammon Board</h2>
+          <h2 className="text-2xl font-bold text-center mb-6 text-amber-900">WEB3 НАРДЫ</h2>
 
           {/* Clickable area for field 0 (dead white checkers) - above top row */}
           <div
@@ -724,12 +724,85 @@ export const BackgammonBoard = () => {
           </div>
 
           {/* Top half: cells 12-1 (right to left) */}
-          <div className="flex gap-4 mb-[100px]">
+          <div className="flex gap-4 mb-4">
             {Array.from({ length: 12 }, (_, i) => 12 - i).map(cell => renderPoint(cell, true))}
           </div>
 
+          {/* Center: Dice images and roll button - always reserve space */}
+          <div className="flex justify-center items-center gap-2 my-4 min-h-[48px]">
+            {((isItBlackTurn && blackDiceRolled) || (!isItBlackTurn && whiteDiceRolled)) &&
+              (isItBlackTurn ? blackAvailableMoveValues : whiteAvailableMoveValues).map((value, index) => (
+                <Image key={index} src={`/${value}.png`} alt={`Dice ${value}`} width={48} height={48} />
+              ))}
+            {((isItBlackTurn && !blackDiceRolled) || (!isItBlackTurn && !whiteDiceRolled)) &&
+              (() => {
+                // Determine if current user can roll dice
+                const isCurrentUserBlack =
+                  currentAddress &&
+                  blackPlayer &&
+                  typeof blackPlayer === "string" &&
+                  currentAddress.toLowerCase() === blackPlayer.toLowerCase();
+                const isCurrentUserWhite =
+                  currentAddress &&
+                  whitePlayer &&
+                  typeof whitePlayer === "string" &&
+                  currentAddress.toLowerCase() === whitePlayer.toLowerCase();
+
+                // Determine button state and text
+                let buttonText = "КИНУТЬ КОСТИ";
+                let isButtonActive = false;
+
+                if (isItBlackTurn && !blackDiceRolled) {
+                  // Black's turn, dice not rolled
+                  if (isCurrentUserBlack) {
+                    buttonText = "КИНУТЬ КОСТИ";
+                    isButtonActive = true;
+                  } else {
+                    buttonText = "ЖДЕМ ЧЕРНОГО";
+                    isButtonActive = false;
+                  }
+                } else if (!isItBlackTurn && !whiteDiceRolled) {
+                  // White's turn, dice not rolled
+                  if (isCurrentUserWhite) {
+                    buttonText = "КИНУТЬ КОСТИ";
+                    isButtonActive = true;
+                  } else {
+                    buttonText = "ЖДЕМ БЕЛОГО";
+                    isButtonActive = false;
+                  }
+                }
+
+                return (
+                  <button
+                    className={`btn ${isButtonActive ? "btn-primary" : "btn-disabled"}`}
+                    disabled={!isButtonActive}
+                    onClick={async () => {
+                      if (!isButtonActive) return;
+                      try {
+                        if (isItBlackTurn) {
+                          await writeBackgammonAsync({
+                            functionName: "rollDiceBlack",
+                          });
+                        } else {
+                          await writeBackgammonAsync({
+                            functionName: "rollDiceWhite",
+                          });
+                        }
+                      } catch (error) {
+                        console.error("Error rolling dice:", error);
+                        const userMessage = parseErrorMessage(error);
+                        notification.error(userMessage);
+                      }
+                    }}
+                  >
+                    {buttonText}
+                  </button>
+                );
+              })()}
+          </div>
+
           {/* Bottom half: cells 13-24 (left to right) */}
-          <div className="flex gap-4">
+          <div className="flex gap-4 mt-4">
             {Array.from({ length: 12 }, (_, i) => 13 + i).map(cell => renderPoint(cell, false))}
           </div>
 
@@ -803,7 +876,7 @@ export const BackgammonBoard = () => {
           )}
           {winner === 0 && (
             <div className="flex items-center gap-3">
-              <div className="text-xl font-bold text-amber-900">ХОДИТ:</div>
+              <div className="text-xl font-bold text-amber-900">ХОД:</div>
               {isItBlackTurn ? (
                 <div className="w-10 h-10 rounded-full bg-gray-800 border-2 border-gray-900 shadow-md flex items-center justify-center">
                   <div className="w-6 h-6 rounded-full bg-gray-900"></div>
@@ -827,40 +900,6 @@ export const BackgammonBoard = () => {
                 <div className="text-sm text-red-600 font-medium bg-red-50 px-3 py-2 rounded-lg border border-red-200">
                   ⚠️ Сначала верните фишки с бара (поле 25)!
                 </div>
-              )}
-              {((isItBlackTurn && blackDiceRolled) || (!isItBlackTurn && whiteDiceRolled)) && (
-                <div className="flex flex-col gap-2">
-                  <div className="text-xl font-bold text-amber-900">ХОДЫ:</div>
-                  <div className="flex gap-2">
-                    {(isItBlackTurn ? blackAvailableMoveValues : whiteAvailableMoveValues).map((value, index) => (
-                      <Image key={index} src={`/${value}.png`} alt={`Dice ${value}`} width={48} height={48} />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {((isItBlackTurn && !blackDiceRolled) || (!isItBlackTurn && !whiteDiceRolled)) && (
-                <button
-                  className="btn btn-primary"
-                  onClick={async () => {
-                    try {
-                      if (isItBlackTurn) {
-                        await writeBackgammonAsync({
-                          functionName: "rollDiceBlack",
-                        });
-                      } else {
-                        await writeBackgammonAsync({
-                          functionName: "rollDiceWhite",
-                        });
-                      }
-                    } catch (error) {
-                      console.error("Error rolling dice:", error);
-                      const userMessage = parseErrorMessage(error);
-                      notification.error(userMessage);
-                    }
-                  }}
-                >
-                  Кинуть кости
-                </button>
               )}
             </>
           )}
