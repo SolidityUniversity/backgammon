@@ -1,0 +1,9 @@
+{
+  "buildCommand": "yarn workspace @se-2/nextjs build",
+  "installCommand": "yarn install",
+  "framework": null,
+  "outputDirectory": "packages/nextjs/.next",
+  "devCommand": "yarn workspace @se-2/nextjs dev",
+  "ignoreCommand": "echo 'Skipping build checks'"
+}
+

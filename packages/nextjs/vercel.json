@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && yarn install && yarn workspace @se-2/nextjs build",
-  "installCommand": "cd ../.. && yarn install",
-  "framework": "nextjs"
+    "installCommand": "yarn set version 3.2.3 && yarn install",
+    "buildCommand": "yarn build",
+    "framework": "nextjs"
 }
